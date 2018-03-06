@@ -3,8 +3,7 @@ var elasticsearch = require('elasticsearch');
 
 // custom variables that will be different for each situation
 var searchUrl = 'http://localhost:9200';
-var indexName = 'swish';
-var sourceName = 'company';
+var indexName = 'company';
 var companyData = [
     {
         _id: 1,
@@ -56,7 +55,6 @@ function reindex() {
             // how each field is treated when searching
             return es.indices.putMapping({
                 index: indexName,
-                type: sourceName,
                 body: {
                     properties: {
                         name: { analyzer: 'my_analyzer', type: 'text', boost: 8.0 },
@@ -76,7 +74,6 @@ function reindex() {
                 bulkData.push({
                     index: {
                         _index: indexName,
-                        _type:  sourceName,
                         _id:    item._id + ''
                     }
                 });
@@ -105,7 +102,6 @@ function search(searchInput) {
     // really basic search here based on the company name and aliases fields
     return es.search({
         index: indexName,
-        type: sourceName,
         body: {
             'min_score': 0.1,
             'from': 0,
