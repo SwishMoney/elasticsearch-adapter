@@ -1,6 +1,7 @@
 var _ = require('lodash');
 var elasticsearch = require('elasticsearch');
 
+// custom variables that will be different for each situation
 var searchUrl = 'http://localhost:9200';
 var indexName = 'swish';
 var sourceName = 'company';
@@ -17,17 +18,24 @@ var companyData = [
     }
 ];
 
+// delete the old index, create a new one and load it with data
 function reindex() {
     var es = new elasticsearch.Client({
         host: searchUrl,
         requestTimeout: 120000
     });
 
+    // delete any existing index (obviously don't do this with a live system)
     return es.indices.delete({ index: indexName })
         .then(function () {
+
+            // elasticsearch caches commands sometimes, so flush to be safe
             return es.indices.flush({ index: indexName });
         })
         .then(function () {
+
+            // create the new index with one simple keyword analyzer that
+            // treats all text in lowercase
             return es.indices.create({
                 index: indexName,
                 body: {
@@ -43,6 +51,9 @@ function reindex() {
             })
         })
         .then(function () {
+
+            // the mapping is for a specific data set (i.e. company) and defines
+            // how each field is treated when searching
             return es.indices.putMapping({
                 index: indexName,
                 type: sourceName,
@@ -60,6 +71,7 @@ function reindex() {
         .then(function () {
             var bulkData = [];
 
+            // in the bulk data array, the index info for an item is followed by the item
             _.each(companyData, function (item) {
                 bulkData.push({
                     index: {
@@ -83,12 +95,14 @@ function reindex() {
         });
 }
 
+// search companies with a given input
 function search(searchInput) {
     var es = new elasticsearch.Client({
         host: searchUrl,
         requestTimeout: 120000
     });
 
+    // really basic search here based on the company name and aliases fields
     return es.search({
         index: indexName,
         type: sourceName,
